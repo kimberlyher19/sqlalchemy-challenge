@@ -36,6 +36,9 @@ app = Flask(__name__)
 #################################################
 # Flask Routes
 #################################################
+
+#Start at the homepage.
+#List all the available routes.
 @app.route("/")
 def home():
     return (
@@ -45,14 +48,65 @@ def home():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
+        f"<br/>"
+        "Enter date ranges below (MMDDYYYY):<br/>"
+        f"(01012010 to 08232017)<br/>"
         f"/api/v1.0/temp/start<br/>"
         f"/api/v1.0/temp/start/end<br/>"
-        f"<p>'Start' and 'End' date should be in the format MMDDYYYY.<p>"
     )
 
+#Convert the query results from your precipitation analysis (i.e. retrieve only the last 12 months of data) 
+#to a dictionary using date as the key and prcp as the value.
+#Return the JSON representation of your dictionary.
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    return 
+    last_year = dt.date(2017,8,23) - dt.timedelta(days=365)
+
+    precipitation = session.query(Measurement.date, Measurement.prcp).\
+        filter(Measurement.date >= last_year).all()
+    
+    session.close()
+
+    precipitation1 = {date: prcp for date, prcp in precipitation}
+
+    return jsonify(precipitation1)
+
+"""-------------------------------------------------------------------------------------------------------------"""
+
+#Return a JSON list of stations from the dataset.
+@app.route("/api/v1.0/stations")
+def stations ():
+    stations = session.query(Station.id, Station.station, Station.name).all()
+
+    session.close()
+
+    stations1 = list(np.ravel(stations))
+
+    return jsonify(stations=stations1)
+
+"""-------------------------------------------------------------------------------------------------------------"""
+
+#Query the dates and temperature observations of the most-active station for the previous year of data.
+#Return a JSON list of temperature observations for the previous year.
+@app.route("/api/v1.0/tobs")
+def monthly_temp ():
+    last_year = dt.date(2017,8,23) - dt.timedelta(days=365)
+
+    monthly_temp = session.query(Measurement.tobs).\
+        filter(Measurement.station == 'USC00519281').\
+        filter(Measurement.date >= last_year).all()
+    
+    session.close
+
+    monthly_temp1 = list(np.ravel(monthly_temp))
+
+    return jsonify(temps=monthly_temp1)
+
+"""-------------------------------------------------------------------------------------------------------------"""
+
+#Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range.
+#For a specified start, calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date.
+#For a specified start date and end date, calculate TMIN, TAVG, and TMAX for the dates from the start date to the end date, inclusive.
 
 
 if __name__ == '__main__':
