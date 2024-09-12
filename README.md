@@ -34,6 +34,7 @@ Now that you’ve completed your initial analysis, you’ll design a Flask API b
 
 ## __Footnotes__
 __'Resources'__ folder contains CSV and sqlite files.
+
 Codes were referenced from the class activities and I used ChatGPT for assistance when my codes weren't running properly. 
 
 
