@@ -44,13 +44,18 @@ def home():
     return (
         f"Welcome to the Hawaii Climate App!<br/>"
         f"<br/>"
-        f"Availble Routes:<br/>"
+        f"<br/>"
+        f"Available Routes:<br/>"
+        f"<br/>"
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"<br/>"
-        "Enter date ranges below (MMDDYYYY):<br/>"
-        f"(01012010 to 08232017)<br/>"
+        f"<br/>"
+        "Enter date ranges below (MM-DD-YYYY):<br/>"
+        f"<br/>"
+        f"(01-01-2010 to 08-23-2017)<br/>"
+        f"<br/>"
         f"/api/v1.0/temp/start<br/>"
         f"/api/v1.0/temp/start/end<br/>"
     )
@@ -62,8 +67,7 @@ def home():
 def precipitation():
     last_year = dt.date(2017,8,23) - dt.timedelta(days=365)
 
-    precipitation = session.query(Measurement.date, Measurement.prcp).\
-        filter(Measurement.date >= last_year).all()
+    precipitation = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date >= last_year).all()
     
     session.close()
 
@@ -92,11 +96,9 @@ def stations ():
 def monthly_temp ():
     last_year = dt.date(2017,8,23) - dt.timedelta(days=365)
 
-    monthly_temp = session.query(Measurement.tobs).\
-        filter(Measurement.station == 'USC00519281').\
-        filter(Measurement.date >= last_year).all()
+    monthly_temp = session.query(Measurement.tobs).filter(Measurement.station == 'USC00519281').filter(Measurement.date >= last_year).all()
     
-    session.close
+    session.close()
 
     monthly_temp1 = list(np.ravel(monthly_temp))
 
@@ -107,7 +109,31 @@ def monthly_temp ():
 #Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a specified start or start-end range.
 #For a specified start, calculate TMIN, TAVG, and TMAX for all the dates greater than or equal to the start date.
 #For a specified start date and end date, calculate TMIN, TAVG, and TMAX for the dates from the start date to the end date, inclusive.
+@app.route("/api/v1.0/temp/<start>")
+@app.route("/api/v1.0/temp/<start>/<end>")
+def start_end(start = None, end = None):
+    info = [func.max(Measurement.tobs), func.min(Measurement.tobs), func.avg(Measurement.tobs)]
+    if not end:
+        start = dt.datetime.strptime(start, "%m-%d-%Y")
+        results = session.query(*info).filter(Measurement.date >= start).all()
+        
+        session.close()
 
+        temperatures = list(np.ravel(results))
+
+        return jsonify(temps=temperatures)
+    
+    start = dt.datetime.strptime(start, "%m-%d-%Y")
+    end = dt.datetime.strptime(end, "%m-%d-%Y")
+
+    results = session.query(*info).filter(Measurement.date >= start).filter(Measurement.date <= end).all()
+    
+    session.close()
+
+    temperatures = list(np.ravel(results))
+
+    return jsonify(temps=temperatures)
+ 
 
 if __name__ == '__main__':
     app.run(debug=True)
